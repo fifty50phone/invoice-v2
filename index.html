@@ -398,6 +398,49 @@
         }
       });
 
+      // --- PRINT HELPER (Iframe method to avoid popup issues) ---
+      function printReceipt(htmlContent) {
+        // Create a hidden iframe
+        const iframe = document.createElement('iframe');
+        // Hide it visually but keep it in layout for rendering
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+        
+        // Write content to iframe
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(`
+            <html>
+                <head>
+                    <title>Print Receipt</title>
+                    <style>
+                        body { margin: 0; padding: 0; font-family: 'Courier New', monospace; }
+                        @media print {
+                            @page { margin: 0; size: 72mm auto; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${htmlContent}
+                </body>
+            </html>
+        `);
+        doc.close();
+
+        // Wait for content to load then print
+        iframe.contentWindow.focus();
+        setTimeout(() => {
+            iframe.contentWindow.print();
+            // Remove iframe after a delay to ensure print dialog opened
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 2000); // 2 second delay before removing iframe
+        }, 500);
+      }
+
       // --- PRINT & TRANSACTION LOGIC ---
       printBtn.addEventListener('click', () => {
         if (!items.length) return alert('Cart is empty!');
@@ -452,25 +495,8 @@
             </div>
           </div>`;
 
-        // 3. Print
-        const w = window.open('', '', 'width=400,height=600');
-        w.document.write(`
-            <html>
-                <head><title>Print</title></head>
-                <body>
-                    ${receiptHTML}
-                    <script>
-                        // Wait for images and resources, then print after a safe delay
-                        setTimeout(function() {
-                            window.print();
-                            // Optional: Close window after print dialog is closed (works in some browsers)
-                            window.close(); 
-                        }, 500);
-                    <\/script>
-                </body>
-            </html>
-        `);
-        w.document.close();
+        // 3. Print via Iframe
+        printReceipt(receiptHTML);
 
         // 4. Save to History
         history.push({
@@ -498,22 +524,7 @@
       function doReprint(idx) {
         const inv = history[idx];
         if(!inv) return;
-        const w = window.open('', '', 'width=400,height=600');
-        w.document.write(`
-            <html>
-                <head><title>Reprint</title></head>
-                <body>
-                    ${inv.html}
-                    <script>
-                        setTimeout(function() {
-                            window.print();
-                            window.close();
-                        }, 500);
-                    <\/script>
-                </body>
-            </html>
-        `);
-        w.document.close();
+        printReceipt(inv.html);
       }
 
       function doRefund(idx) {
