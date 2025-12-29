@@ -26,6 +26,9 @@
     #print-area { display: none; }
 
     @media print {
+      /* 1. Reset Page: Tells browser to use the printer's defined paper size (continuous) */
+      @page { size: auto; margin: 0mm; }
+      
       /* Hide the main App UI */
       header, main, footer, .no-print { display: none !important; }
       
@@ -35,7 +38,7 @@
         margin: 0; 
         padding: 0; 
         width: 100%; 
-        height: auto; 
+        height: 100%; 
         overflow: visible; 
       }
 
@@ -45,13 +48,11 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 72mm; /* Standard Thermal Width */
+        width: 100%; /* Changed from fixed 72mm to 100% to fit any paper */
         font-family: 'Courier New', monospace;
         font-size: 12px;
+        padding-bottom: 20mm; /* Extra bottom padding to prevent cutter slicing footer */
       }
-
-      /* Remove browser default margins if possible */
-      @page { margin: 0; }
     }
   </style>
 </head>
@@ -457,9 +458,9 @@
         saveInv();
         renderInventory();
 
-        // 2. Generate HTML for Receipt
+        // 2. Generate HTML for Receipt (Using 100% width)
         const receiptHTML = `
-          <div style="width:72mm; margin:0 auto; padding:10px 0;">
+          <div style="width:100%; margin:0; padding:10px 0;">
             <div style="text-align:center; margin-bottom:10px;">
               <img src="logo.png" onerror="this.style.display='none'" style="width:60px; height:auto; margin-bottom:5px;"><br>
               <strong style="font-size:14px">Fifty Fifty Phone LLC</strong><br>
