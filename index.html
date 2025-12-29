@@ -11,15 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    /* 72mm thermal printing */
-    @media print {
-      body { width: 72mm; margin: 0; font-size: 12px; font-family: monospace; }
-      .no-print { display: none !important; }
-      .print-only { display: block !important; }
-    }
-    
     /* Screen styling */
-    .print-only { display: none; }
     .panel { min-height: 520px; }
     .table th, .table td { padding: 4px 6px; }
     
@@ -28,6 +20,39 @@
     ::-webkit-scrollbar-track { background: #f1f1f1; }
     ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    /* --- PRINT STYLING (Crucial Fix) --- */
+    /* Hide the print area by default on screen */
+    #print-area { display: none; }
+
+    @media print {
+      /* Hide the main App UI */
+      header, main, footer, .no-print { display: none !important; }
+      
+      /* Reset body for printing */
+      body { 
+        background: white; 
+        margin: 0; 
+        padding: 0; 
+        width: 100%; 
+        height: auto; 
+        overflow: visible; 
+      }
+
+      /* Show and style the print area */
+      #print-area { 
+        display: block !important; 
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 72mm; /* Standard Thermal Width */
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+      }
+
+      /* Remove browser default margins if possible */
+      @page { margin: 0; }
+    }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-900 min-h-screen flex flex-col font-sans">
@@ -150,6 +175,9 @@
   <footer class="no-print text-center text-xs text-gray-500 py-3">
     System Ready • Local Storage Enabled
   </footer>
+
+  <!-- DEDICATED PRINT AREA (HIDDEN ON SCREEN) -->
+  <div id="print-area"></div>
 
   <!-- App Logic -->
   <script>
@@ -398,46 +426,14 @@
         }
       });
 
-      // --- PRINT HELPER (Iframe method to avoid popup issues) ---
+      // --- PRINT HELPER (UPDATED: DIRECT DOM INSERTION) ---
       function printReceipt(htmlContent) {
-        // Create a hidden iframe
-        const iframe = document.createElement('iframe');
-        // Hide it visually but keep it in layout for rendering
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0px';
-        iframe.style.height = '0px';
-        iframe.style.border = 'none';
-        document.body.appendChild(iframe);
+        const printArea = document.getElementById('print-area');
+        printArea.innerHTML = htmlContent;
         
-        // Write content to iframe
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(`
-            <html>
-                <head>
-                    <title>Print Receipt</title>
-                    <style>
-                        body { margin: 0; padding: 0; font-family: 'Courier New', monospace; }
-                        @media print {
-                            @page { margin: 0; size: 72mm auto; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${htmlContent}
-                </body>
-            </html>
-        `);
-        doc.close();
-
-        // Wait for content to load then print
-        iframe.contentWindow.focus();
+        // Small delay to allow DOM to update and images to load (if any)
         setTimeout(() => {
-            iframe.contentWindow.print();
-            // Remove iframe after a delay to ensure print dialog opened
-            setTimeout(() => {
-                document.body.removeChild(iframe);
-            }, 2000); // 2 second delay before removing iframe
+            window.print();
         }, 500);
       }
 
@@ -463,7 +459,7 @@
 
         // 2. Generate HTML for Receipt
         const receiptHTML = `
-          <div style="font-family:'Courier New', monospace; font-size:12px; width:72mm; margin:0 auto;">
+          <div style="width:72mm; margin:0 auto; padding:10px 0;">
             <div style="text-align:center; margin-bottom:10px;">
               <img src="logo.png" onerror="this.style.display='none'" style="width:60px; height:auto; margin-bottom:5px;"><br>
               <strong style="font-size:14px">Fifty Fifty Phone LLC</strong><br>
@@ -474,7 +470,7 @@
               ${date}<br>
               --------------------------------<br>
             </div>
-            <table style="width:100%; font-size:12px; border-collapse: collapse;">
+            <table style="width:100%; border-collapse: collapse;">
               ${items.map(i => `
                   <tr>
                     <td style="padding:2px 0;">${i.name}</td>
@@ -495,7 +491,7 @@
             </div>
           </div>`;
 
-        // 3. Print via Iframe
+        // 3. Print
         printReceipt(receiptHTML);
 
         // 4. Save to History
