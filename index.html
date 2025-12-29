@@ -454,7 +454,22 @@
 
         // 3. Print
         const w = window.open('', '', 'width=400,height=600');
-        w.document.write('<html><head><title>Print</title></head><body onload="window.print(); window.close();">' + receiptHTML + '</body></html>');
+        w.document.write(`
+            <html>
+                <head><title>Print</title></head>
+                <body>
+                    ${receiptHTML}
+                    <script>
+                        // Wait for images and resources, then print after a safe delay
+                        setTimeout(function() {
+                            window.print();
+                            // Optional: Close window after print dialog is closed (works in some browsers)
+                            window.close(); 
+                        }, 500);
+                    <\/script>
+                </body>
+            </html>
+        `);
         w.document.close();
 
         // 4. Save to History
@@ -484,7 +499,20 @@
         const inv = history[idx];
         if(!inv) return;
         const w = window.open('', '', 'width=400,height=600');
-        w.document.write('<html><head><title>Reprint</title></head><body onload="window.print(); window.close();">' + inv.html + '</body></html>');
+        w.document.write(`
+            <html>
+                <head><title>Reprint</title></head>
+                <body>
+                    ${inv.html}
+                    <script>
+                        setTimeout(function() {
+                            window.print();
+                            window.close();
+                        }, 500);
+                    <\/script>
+                </body>
+            </html>
+        `);
         w.document.close();
       }
 
